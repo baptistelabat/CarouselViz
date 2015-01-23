@@ -46,6 +46,8 @@ class CarouselViz {
  
         //Called to update the animation
         static void updateFunc(int value);
+        
+        static void proveCollision();
 
     private:
 };
