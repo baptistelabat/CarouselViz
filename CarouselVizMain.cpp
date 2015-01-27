@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
     glutDisplayFunc(CarouselViz::drawScene);
     glutReshapeFunc(CarouselViz::handleResize);
     //Define what to do while idlephase (receive UDP-Packages)
-    //glutIdleFunc(CarouselViz::idleFunc);
+    glutIdleFunc(CarouselViz::idleFunc);
     //Add a timer
     glutTimerFunc(25, CarouselViz::updateFunc, 0);
     glutKeyboardFunc(CarouselViz::handleKeypress);

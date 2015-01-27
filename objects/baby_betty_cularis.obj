@@ -1,6 +1,6 @@
 # Blender v2.72 (sub 0) OBJ File: 'BABYBETTYREAL.blend'
 # www.blender.org
-#mtllib BABYBETTYREAL.mtl
+mtllib baby_betty_cularis_canope.mtl
 o Cylinder.002
 v 0.004789 1.226028 2.317510
 v 0.004789 0.977430 2.981546
@@ -189,7 +189,7 @@ vn 0.499500 0.797400 0.338600
 vn 0.370500 0.917300 -0.145900
 vn 0.921100 0.388800 0.016800
 vn 0.672800 0.681500 0.287900
-usemtl None
+usemtl Material.001
 s off
 f 1//1 2//1 4//1
 f 3//2 4//2 6//2

@@ -51,6 +51,10 @@ GLMmodel* arm_model;
 GLMmodel* trailer_model;
 GLMmodel* wheels_model;
 GLMmodel* plate_model;
+GLMmodel* grass_model;
+GLMmodel* grass_frame_model;
+
+GLMmodel* object_model;
 
 // Start struct receiving process
 UDP my_udp;
@@ -70,6 +74,7 @@ void CarouselViz::initFunc() {
     my_udp.initUDP(OTHER_IP, OTHER_PORT, OWN_PORT);
     // Load .obj files
     plane_model = glmReadOBJ((char *)"./objects/baby_betty_cularis.obj");
+    plane_model = glmReadOBJ((char *)"./objects/baby_betty_cularis.obj");
     glmScale(plane_model, 0.1f);
     plane_canope_model = glmReadOBJ((char *)"./objects/baby_betty_cularis_canope.obj");
     glmScale(plane_canope_model, 0.1f);
@@ -81,6 +86,13 @@ void CarouselViz::initFunc() {
     glmScale(wheels_model, 0.2f);
     plate_model = glmReadOBJ((char *)"./objects/plate.obj");
     glmScale(plate_model, 0.2f);
+    grass_model = glmReadOBJ((char *)"./objects/grass.obj");
+    glmScale(grass_model, 0.2f);
+    grass_frame_model = glmReadOBJ((char *)"./objects/grass_frame.obj");
+    glmScale(grass_frame_model, 0.2f);
+    object_model = glmReadOBJ((char *)"./objects/office_chair.obj");
+    glmUnitize(object_model);
+    glmScale(object_model, 3.0f);
     // init the rendering
     initRendering();
 }
@@ -133,7 +145,7 @@ void CarouselViz::drawScene() {
     glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor0);
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos0);
  
-    
+
     //Add directed light
     GLfloat lightColor1[] = {0.35f, 0.35f, 0.2f, 1.0f}; //Color (0.5, 0.2, 0.2)
     //Coming from the direction (-1, 0.5, 0.5)
@@ -142,17 +154,35 @@ void CarouselViz::drawScene() {
     glLightfv(GL_LIGHT1, GL_POSITION, lightPos1);
 
 
-    glBegin(GL_QUADS);
 
+    /*
     //Ground
-    glColor3f(0.45f, 1.0f, 0.45f);
+    glBegin(GL_QUADS);
+    glColor3f(0.17f, 0.83f, 0.0f);
     glNormal3f(0.0f, 1.0f, 0.0f);
     glVertex3f(-40.0f, -8.0f, 40.0f);
     glVertex3f(40.0f, -8.0f, 40.0f);
     glVertex3f(40.0f, -8.0f, -40.0f);
     glVertex3f(-40.0f, -8.0f, -40.0f);
     glEnd();
+    */
+    glPushMatrix();
+    glColor3f(0.17f, 0.83f, 0.0f);
+    glRotatef(-90.0,1.0,0.0,0.0);
+    glTranslatef(0.0,0.0,-8.3);
+    glmDraw(grass_model,GLM_SMOOTH);
+    glColor3f(0.4f, 0.4f, 0.4f);
+    glmDraw(grass_frame_model,GLM_SMOOTH);
+   
+    glTranslatef(-8.0,5.0,5.0);
+    glRotatef(90.0,1.0,0.0,0.0);
+    glRotatef(arm_angle,1.0,0.0,1.0);
+    glmDraw(object_model, GLM_SMOOTH | GLM_MATERIAL);
+    // Draw with material defined disables color --> enable it again 
+    glEnable(GL_COLOR_MATERIAL);
     
+    glPopMatrix();
+
     glPushMatrix();
 
     // Trailer, Wheels & Plate
@@ -274,7 +304,7 @@ void CarouselViz::drawScene() {
     glRotatef(plane_angle,1.0f,0.0f,0.0f);
 
     glColor3f(0.9f, 0.9f, 0.9f);
-    glmDraw(plane_model,GLM_SMOOTH);
+    glmDraw(plane_model,GLM_SMOOTH); 
     glTranslatef(0.0f, 0.01f, 0.0f);
     glColor3f(0.2f, 0.2f, 0.2f);
     glmDraw(plane_canope_model,GLM_SMOOTH);
@@ -332,7 +362,7 @@ void CarouselViz::idleFunc(void) {
     window_line_sum += window_line_angles[window_len - 1];
     window_plane_sum += window_plane_angles[window_len - 1];
     line_angle = window_line_sum/(float)window_len; 
-    plane_angle = window_plane_sum/(float)window_len; 
+    plane_angle = -window_plane_sum/(float)window_len; 
 }
  
 void CarouselViz::updateFunc(int value) {
@@ -341,7 +371,7 @@ void CarouselViz::updateFunc(int value) {
     arm_angle += 3.0f + 2.0*sin(3.1415*arm_angle_time/180.0);
     if (arm_angle > 360.0)
         arm_angle -= 360.0;
-    line_angle = 30*sin(3.1415*line_angle_time/180.0)-45.0;
+    //line_angle = 30*sin(3.1415*line_angle_time/180.0)-45.0;
     proveCollision();
  
     // Set the camera position depending on the view_mode
