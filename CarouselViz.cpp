@@ -23,19 +23,20 @@
 // WINDOW_LEN defines the sliding window size
 // Large Window --> smooth behavior
 // Small Window --> agressive behavior
-#define WINDOW_LEN 500
+#define WINDOW_LEN 250
 
 using namespace std;
 
 bool view_mode = false;
 
 // Current angle of the CarouselArm
-float carousel_angle = 0.0f;
-float carousel_angle_time = 0.0f;
+float arm_angle = 0.0f;
+float arm_angle_time = 0.0f;
+float arm_len = 5.9f;
 // Elevation angle between CarouselArm & Line
 float line_angle = 0.0f;
 float line_angle_time = 0.0f;
-float line_len = 4.0f;
+float line_len = 6.0f;
 // Pitch angle of the plane
 float plane_angle = 0.0f;
 // azimuth and elevation for bubble
@@ -45,7 +46,11 @@ float bubble_radius = 0.5f;
 
 // Prepare space for the .obj models
 GLMmodel* plane_model;
-GLMmodel* writing_model;
+GLMmodel* plane_canope_model;
+GLMmodel* arm_model;
+GLMmodel* trailer_model;
+GLMmodel* wheels_model;
+GLMmodel* plate_model;
 
 // Start struct receiving process
 UDP my_udp;
@@ -64,10 +69,18 @@ void CarouselViz::initFunc() {
     // Initialize UDP
     my_udp.initUDP(OTHER_IP, OTHER_PORT, OWN_PORT);
     // Load .obj files
-    plane_model = glmReadOBJ((char *)"./objects/plane.obj");
-    writing_model = glmReadOBJ((char *)"./objects/writing.obj");
-    glmScale(plane_model, 0.2f);
-    glmScale(writing_model, 0.2f);
+    plane_model = glmReadOBJ((char *)"./objects/baby_betty_cularis.obj");
+    glmScale(plane_model, 0.1f);
+    plane_canope_model = glmReadOBJ((char *)"./objects/baby_betty_cularis_canope.obj");
+    glmScale(plane_canope_model, 0.1f);
+    arm_model = glmReadOBJ((char *)"./objects/arm.obj");
+    glmScale(arm_model, 0.2f);
+    trailer_model = glmReadOBJ((char *)"./objects/trailer.obj");
+    glmScale(trailer_model, 0.2f);
+    wheels_model = glmReadOBJ((char *)"./objects/wheels.obj");
+    glmScale(wheels_model, 0.2f);
+    plate_model = glmReadOBJ((char *)"./objects/plate.obj");
+    glmScale(plate_model, 0.2f);
     // init the rendering
     initRendering();
 }
@@ -96,7 +109,6 @@ void CarouselViz::handleKeypress(unsigned char key, int x, int y) {
     switch (key) {
         case 27: //Escape key
             glmDelete(plane_model);
-            glmDelete(writing_model);
             exit(0);
         case 99: //Escape key
             view_mode = !view_mode;
@@ -121,31 +133,44 @@ void CarouselViz::drawScene() {
     glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor0);
     glLightfv(GL_LIGHT0, GL_POSITION, lightPos0);
  
-    /*
+    
     //Add directed light
-    GLfloat lightColor1[] = {0.5f, 0.2f, 0.2f, 1.0f}; //Color (0.5, 0.2, 0.2)
+    GLfloat lightColor1[] = {0.35f, 0.35f, 0.2f, 1.0f}; //Color (0.5, 0.2, 0.2)
     //Coming from the direction (-1, 0.5, 0.5)
     GLfloat lightPos1[] = {-1.0f, 0.5f, 0.5f, 0.0f};
     glLightfv(GL_LIGHT1, GL_DIFFUSE, lightColor1);
     glLightfv(GL_LIGHT1, GL_POSITION, lightPos1);
-    */
+
+
     glBegin(GL_QUADS);
-    glColor3f(1.0f, 1.0f, 1.0f);
+
     //Ground
+    glColor3f(0.45f, 1.0f, 0.45f);
     glNormal3f(0.0f, 1.0f, 0.0f);
-    glVertex3f(-20.0f, -8.0f, 20.0f);
-    glVertex3f(20.0f, -8.0f, 20.0f);
-    glVertex3f(20.0f, -8.0f, -20.0f);
-    glVertex3f(-20.0f, -8.0f, -20.0f);
+    glVertex3f(-40.0f, -8.0f, 40.0f);
+    glVertex3f(40.0f, -8.0f, 40.0f);
+    glVertex3f(40.0f, -8.0f, -40.0f);
+    glVertex3f(-40.0f, -8.0f, -40.0f);
     glEnd();
     
-
     glPushMatrix();
 
+    // Trailer, Wheels & Plate
+    glPushMatrix();
+    glRotatef(-90.0,1.0,0.0,0.0);
+    glRotatef(90.0,0.0,0.0,1.0);
+    glTranslatef(0.0,0.0,-5.5);
+    glColor3f(0.9f, 0.9f, 0.9f);
+    glmDraw(trailer_model,GLM_SMOOTH);
+    glColor3f(0.2f, 0.2f, 0.2f);
+    glmDraw(wheels_model,GLM_SMOOTH);
+    glColor3f(0.54f, 0.27f, 0.07f);
+    glTranslatef(0.0f,0.0f,0.01f);
+    glmDraw(plate_model,GLM_SMOOTH);
+    glPopMatrix();
 
-    glRotatef(carousel_angle, 0.0f, 1.0f, 0.0f);
- 
-
+    glRotatef(arm_angle, 0.0f, 1.0f, 0.0f);
+    /*
     //Set the colour here
     glBegin(GL_QUADS);
     glColor3f(0.0f, 0.0f, 1.0f);
@@ -214,9 +239,26 @@ void CarouselViz::drawScene() {
     glVertex3f(-0.2f, -8.0f, 0.2f);
     glVertex3f(-0.2f, -8.0f, -0.2f);
     glEnd();
+    */
 
-    // Draw the line
-    glTranslatef(3.5, 0.2, 0.0);
+    glPushMatrix();
+    glRotatef(-90.0,1.0,0.0,0.0);
+    glRotatef(90.0,0.0,0.0,1.0);
+    glTranslatef(0.0,0.0,-5.5);
+    glColor3f(0.7f, 0.7f, 0.7f);
+    glmDraw(arm_model,GLM_SMOOTH);
+    glPopMatrix();
+
+    // Draw the lines
+    // Line 1
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glLineWidth(2.0f);
+    glBegin(GL_LINES);
+    glVertex3f(0.0f, 0.2f, 0.0f);
+    glVertex3f(arm_len, 0.2f, 0.0f);
+    glEnd();
+    // Line 2
+    glTranslatef(arm_len, 0.2, 0.0);
     glRotatef(line_angle, 0.0f, 0.0f, 1.0f);
     glLineWidth(2.0f);
     glColor3f(1.0f, 0.0f, 0.0f);
@@ -225,47 +267,51 @@ void CarouselViz::drawScene() {
     glVertex3f(line_len, 0.0f, 0.0f);
     glEnd();
 
-    // Draw the Ball
-    //glPushMatrix();
-    //glutSolidSphere(0.5f, 10, 10);
-
     // Draw the Plane
     glTranslatef(line_len,0.0f,0.0f);
     glTranslatef(0.0f, 0.0f, -0.1f);
-    glRotatef(-90.0f,1.0f,0.0f,0.0f);
+    glRotatef(180.0f,0.0f,1.0f,0.0f);
     glRotatef(plane_angle,1.0f,0.0f,0.0f);
 
     glColor3f(0.9f, 0.9f, 0.9f);
     glmDraw(plane_model,GLM_SMOOTH);
-    glColor3f(0.03f, 0.18f, 0.8f);
-    glmDraw(writing_model,GLM_SMOOTH);
+    glTranslatef(0.0f, 0.01f, 0.0f);
+    glColor3f(0.2f, 0.2f, 0.2f);
+    glmDraw(plane_canope_model,GLM_SMOOTH);
 
+    
     // Draw the Bubble
     glPopMatrix();
     glRotatef(bubble_azimuth, 0.0f,1.0f,0.0f);
-    glTranslatef(3.5f,0.2f,0.0f);
+    glTranslatef(arm_len,0.2f,0.0f);
     glRotatef(bubble_elevation, 0.0f,0.0f,1.0f);
     glTranslatef(line_len,0.0f,0.0f);
-    glColor3f(1.0f, 1.0f, 0.0f);
+    glColor3f(0.89f, 0.32f, 0.0f);
     glutSolidSphere(bubble_radius, 20, 20);
+
     glutSwapBuffers();
 }
 
 void CarouselViz::proveCollision() {
-    float diff = fabs(carousel_angle - bubble_azimuth);
-    if (diff > 360.0) {
-        diff -= 360;
+    float azimuth_diff = fabs(arm_angle - bubble_azimuth);
+    if (azimuth_diff > 360.0) {
+        azimuth_diff -= 360.0;
     }
-    printf("difference in angles: %f\n ", diff);
-    printf("ballradiusangle: %f\n ", 180*atan2(bubble_radius,3.5+cos(3.1415*bubble_elevation/180.0)*line_len)/3.1415);
-    if (diff < (180*atan2(bubble_radius,3.5+cos(3.1415*bubble_elevation/180.0)*line_len)/3.1415)) {
-        //if (diff < 10.0f) {
-        //    printf("HUAAA!!");
+    float elevation_diff = fabs(line_angle - bubble_elevation);
+    if (elevation_diff > 360.0) {
+        elevation_diff -= 360.0;
+    }
+    // printf("difference in angles: %f\n ", azimuth_diff);
+    // printf("ballradiusangle: %f\n ", 180*atan2(bubble_radius,3.5+cos(3.1415*bubble_elevation/180.0)*line_len)/3.1415);
+    if (((azimuth_diff < (180*atan2(bubble_radius,arm_len+cos(3.1415*bubble_elevation/180.0)*line_len)/3.1415)) ||
+         azimuth_diff > 360.0 - (180*atan2(bubble_radius,arm_len+cos(3.1415*bubble_elevation/180.0)*line_len)/3.1415)) &&
+       ((elevation_diff < (180*atan2(bubble_radius,line_len)/3.1415)) ||
+         elevation_diff > 360.0 - (180*atan2(bubble_radius,line_len)/3.1415))) {
+            //printf("HUAAA!!");
             bubble_azimuth += 90.0;
             if (bubble_azimuth > 360.0) {
                 bubble_azimuth -= 360;
             }
-        //}
     }
 }
 
@@ -290,18 +336,18 @@ void CarouselViz::idleFunc(void) {
 }
  
 void CarouselViz::updateFunc(int value) {
-    carousel_angle_time += 1.0f;
+    arm_angle_time += 1.0f;
     line_angle_time += 1.0f;
-    carousel_angle += 3.0f + 2.0*sin(3.1415*carousel_angle_time/180.0);
-    if (carousel_angle > 360.0)
-        carousel_angle -= 360.0;
-    //line_angle = 30*sin(3.1415*line_angle_time/180.0)-45.0;
+    arm_angle += 3.0f + 2.0*sin(3.1415*arm_angle_time/180.0);
+    if (arm_angle > 360.0)
+        arm_angle -= 360.0;
+    line_angle = 30*sin(3.1415*line_angle_time/180.0)-45.0;
     proveCollision();
  
     // Set the camera position depending on the view_mode
     if (!view_mode) {
         glLoadIdentity();
-        gluLookAt(-4.0, 4.0, -15.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+        gluLookAt(-12.0, 3.0, -20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     } else {
         glLoadIdentity(); 
         glTranslatef(0.0f, 0.0f, -5.0f);
@@ -310,8 +356,8 @@ void CarouselViz::updateFunc(int value) {
         glRotatef(-90.0f,0.0f,1.0f,0.0f);
         glTranslatef(0.0f, 0.0f, line_len);
         glRotatef(line_angle,-1.0f,0.0f,0.0f);
-        glTranslatef(0.0f, 0.0f, 3.5f);
-        glRotatef(carousel_angle,0.0f,-1.0f,0.0f);
+        glTranslatef(0.0f, 0.0f, arm_len);
+        glRotatef(arm_angle,0.0f,-1.0f,0.0f);
         /*
         glTranslatef(4.0f, 0.0f, 0.2f);
         */
